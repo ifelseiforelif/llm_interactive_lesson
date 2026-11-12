@@ -1,0 +1,1808 @@
+<!doctype html>
+<html lang="uk">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Інтерактивний урок: NLP з NLTK і embeddings</title>
+    <style>
+      :root {
+        --bg: #0f172a;
+        --card: #1e293b;
+        --accent: #38bdf8;
+        --accent2: #a78bfa;
+        --text: #e2e8f0;
+        --muted: #94a3b8;
+        --success: #4ade80;
+        --danger: #f87171;
+        --border: #334155;
+      }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family:
+          "Segoe UI",
+          system-ui,
+          -apple-system,
+          sans-serif;
+        background: var(--bg);
+        color: var(--text);
+        line-height: 1.6;
+        padding-bottom: 80px;
+      }
+      header {
+        background: linear-gradient(
+          135deg,
+          #0f172a 0%,
+          #1e293b 50%,
+          #312e81 100%
+        );
+        padding: 0.85rem 1rem;
+        text-align: center;
+        border-bottom: 1px solid var(--border);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+        backdrop-filter: blur(12px);
+      }
+      header h1 {
+        font-size: clamp(1.35rem, 3vw, 1.8rem);
+        background: linear-gradient(90deg, var(--accent), var(--accent2));
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        margin-bottom: 0.15rem;
+      }
+      header p {
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .nav-menu {
+        position: relative;
+        width: fit-content;
+        margin: 0.65rem auto 0;
+      }
+      .nav-menu summary {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.55rem;
+        min-height: 42px;
+        padding: 0.45rem 0.9rem;
+        color: var(--text);
+        background: rgba(15, 23, 42, 0.65);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        cursor: pointer;
+        list-style: none;
+        user-select: none;
+      }
+      .nav-menu summary::-webkit-details-marker {
+        display: none;
+      }
+      .nav-menu summary::after {
+        content: "▾";
+        color: var(--accent);
+        transition: transform 0.2s;
+      }
+      .nav-menu[open] summary::after {
+        transform: rotate(180deg);
+      }
+      .nav-menu summary:focus-visible,
+      nav a:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 3px;
+      }
+      .nav-current {
+        color: var(--accent);
+      }
+      nav {
+        position: absolute;
+        top: calc(100% + 0.5rem);
+        left: 50%;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(180px, 1fr));
+        gap: 0.35rem;
+        width: min(440px, calc(100vw - 2rem));
+        max-height: min(60vh, 440px);
+        overflow-y: auto;
+        padding: 0.55rem;
+        background: #172338;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.4);
+        transform: translateX(-50%);
+        z-index: 110;
+      }
+      nav a {
+        display: block;
+        color: var(--muted);
+        text-decoration: none;
+        padding: 0.55rem 0.75rem;
+        border-radius: 8px;
+        font-size: 0.9rem;
+        transition: all 0.2s;
+      }
+      nav a:hover,
+      nav a.active {
+        background: var(--accent);
+        color: #0f172a;
+        border-color: var(--accent);
+      }
+      main {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 2rem 1.2rem;
+      }
+      section {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 1.8rem;
+        margin-bottom: 2rem;
+        scroll-margin-top: 120px;
+      }
+      section h2 {
+        font-size: 1.45rem;
+        margin-bottom: 1rem;
+        color: var(--accent);
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+      }
+      section h2 span {
+        background: rgba(56, 189, 248, 0.15);
+        width: 36px;
+        height: 36px;
+        border-radius: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.1rem;
+      }
+      p,
+      li {
+        color: var(--text);
+        margin-bottom: 0.8rem;
+      }
+      ul,
+      ol {
+        padding-left: 1.4rem;
+        margin-bottom: 1rem;
+      }
+      code,
+      .code {
+        font-family: "JetBrains Mono", "Fira Code", monospace;
+        background: #0f172a;
+        padding: 0.15rem 0.45rem;
+        border-radius: 6px;
+        font-size: 0.9em;
+        color: #7dd3fc;
+      }
+      pre {
+        background: #0f172a;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1.1rem 1.3rem;
+        overflow-x: auto;
+        margin: 1rem 0;
+        font-size: 0.88rem;
+        line-height: 1.5;
+      }
+      pre code {
+        background: none;
+        padding: 0;
+        color: #e2e8f0;
+      }
+      .btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        background: var(--accent);
+        color: #0f172a;
+        border: none;
+        padding: 0.55rem 1.2rem;
+        border-radius: 10px;
+        font-weight: 600;
+        cursor: pointer;
+        font-size: 0.95rem;
+        transition:
+          transform 0.15s,
+          box-shadow 0.15s;
+      }
+      .btn:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(56, 189, 248, 0.3);
+      }
+      .btn-secondary {
+        background: transparent;
+        color: var(--accent);
+        border: 1px solid var(--accent);
+      }
+      .btn-secondary:hover {
+        background: rgba(56, 189, 248, 0.1);
+      }
+      .interactive {
+        background: #0f172a;
+        border: 1px dashed var(--border);
+        border-radius: 12px;
+        padding: 1.3rem;
+        margin: 1.2rem 0;
+      }
+      .interactive h3 {
+        font-size: 1.05rem;
+        color: var(--accent2);
+        margin-bottom: 0.8rem;
+      }
+      .why-nlp {
+        padding: 0.8rem 1rem;
+        margin: 0.8rem 0 1rem;
+        background: rgba(167, 139, 250, 0.08);
+        border-left: 3px solid var(--accent2);
+        border-radius: 0 10px 10px 0;
+      }
+      .why-nlp strong {
+        color: var(--accent2);
+      }
+      input[type="text"],
+      textarea {
+        width: 100%;
+        background: #1e293b;
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 0.7rem 1rem;
+        border-radius: 10px;
+        font-size: 1rem;
+        margin-bottom: 0.8rem;
+        font-family: inherit;
+      }
+      input:focus,
+      textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2);
+      }
+      .result {
+        background: #0f172a;
+        border-left: 4px solid var(--accent);
+        padding: 0.9rem 1.1rem;
+        border-radius: 0 10px 10px 0;
+        margin-top: 1rem;
+        font-family: monospace;
+        white-space: pre-wrap;
+        min-height: 2.5rem;
+      }
+      .quiz-option {
+        display: block;
+        width: 100%;
+        text-align: left;
+        background: #1e293b;
+        border: 1px solid var(--border);
+        color: var(--text);
+        padding: 0.75rem 1rem;
+        border-radius: 10px;
+        margin-bottom: 0.5rem;
+        cursor: pointer;
+        transition: all 0.2s;
+      }
+      .quiz-option:hover {
+        border-color: var(--accent);
+      }
+      .quiz-option.correct {
+        border-color: var(--success);
+        background: rgba(74, 222, 128, 0.1);
+      }
+      .quiz-option.wrong {
+        border-color: var(--danger);
+        background: rgba(248, 113, 113, 0.1);
+      }
+      .progress-bar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        height: 5px;
+        background: var(--accent);
+        width: 0%;
+        transition: width 0.3s;
+        z-index: 200;
+      }
+      .badge {
+        display: inline-block;
+        background: rgba(167, 139, 250, 0.2);
+        color: var(--accent2);
+        padding: 0.2rem 0.6rem;
+        border-radius: 6px;
+        font-size: 0.8rem;
+        margin-left: 0.4rem;
+      }
+      .comparison {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1rem;
+        margin: 1rem 0;
+      }
+      @media (max-width: 600px) {
+        header {
+          padding: 0.65rem 0.7rem;
+        }
+        header h1 {
+          font-size: 1.25rem;
+        }
+        header p {
+          font-size: 0.8rem;
+        }
+        nav {
+          grid-template-columns: 1fr;
+        }
+        main {
+          padding: 1rem 0.8rem;
+        }
+        section {
+          padding: 1.2rem;
+          scroll-margin-top: 125px;
+        }
+        .comparison {
+          grid-template-columns: 1fr;
+        }
+      }
+      .card-mini {
+        background: #0f172a;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1rem;
+      }
+      .card-mini h4 {
+        color: var(--accent);
+        margin-bottom: 0.5rem;
+      }
+      footer {
+        text-align: center;
+        color: var(--muted);
+        padding: 2rem 1rem;
+        font-size: 0.9rem;
+      }
+      .highlight {
+        color: #fbbf24;
+      }
+      .success-msg {
+        color: var(--success);
+      }
+      .error-msg {
+        color: var(--danger);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="progress-bar" id="progress"></div>
+
+    <header>
+      <h1>Інтерактивний урок: NLP</h1>
+      <p>Від тексту й токенів до мовних моделей, Seq2seq і transfer learning</p>
+      <details class="nav-menu">
+        <summary aria-label="Відкрити зміст уроку">
+          <span aria-hidden="true">☰</span>
+          <span>Зміст уроку:</span>
+          <span class="nav-current" id="navCurrent">Вступ</span>
+        </summary>
+        <nav id="nav" aria-label="Розділи уроку">
+          <a href="#intro">Вступ</a>
+          <a href="#tokenize">Токени</a>
+          <a href="#stop">Стоп-слова</a>
+          <a href="#stem">Стемінг</a>
+          <a href="#corpus">Корпус</a>
+          <a href="#embed">Embeddings</a>
+          <a href="#lm">Мовна модель</a>
+          <a href="#lstm">LSTM</a>
+          <a href="#seq2seq">Seq2seq і RNN</a>
+          <a href="#transfer">Transfer learning</a>
+          <a href="#tasks">Завдання</a>
+        </nav>
+      </details>
+    </header>
+
+    <main>
+      <!-- INTRO -->
+      <section id="intro">
+        <h2><span>1</span> Вступ до NLP</h2>
+        <p>
+          Natural Language Processing (обробка природної мови) — це як комп’ютер
+          «розуміє» текст. Ми розберемо класичний стек інструментів на Python
+          (NLTK + gensim + PyTorch) і зробимо все інтерактивно прямо в браузері.
+        </p>
+        <div class="card-mini">
+          <h3>Що таке NLTK?</h3>
+          <p>
+            <strong>NLTK (Natural Language Toolkit)</strong> — це бібліотека для
+            Python з інструментами для обробки тексту й природної мови. Це не
+            одна мовна модель, а набір готових засобів для роботи з текстом.
+          </p>
+          <p>За допомогою NLTK можна:</p>
+          <ul>
+            <li>розбивати текст на слова й речення (токенізація);</li>
+            <li>знаходити та прибирати стоп-слова;</li>
+            <li>виконувати стемінг і лематизацію;</li>
+            <li>працювати з текстовими корпусами та частотами слів.</li>
+          </ul>
+        </div>
+        <p>У цьому уроці ми:</p>
+        <ul>
+          <li>Розіб’ємо текст на токени і приберемо «шум»</li>
+          <li>Зведемо слова до однієї форми (стемінг / лематизація)</li>
+          <li>Попрацюємо з реальним романом</li>
+          <li>Побачимо, як слова стають векторами</li>
+          <li>Порівняємо Word2Vec і GloVe та зрозуміємо embeddings</li>
+          <li>Розберемо мовні моделі, RNN, LSTM і Seq2seq</li>
+          <li>Побачимо, як працює transfer learning</li>
+        </ul>
+        <p>
+          <strong>Маршрут:</strong> спершу прочитайте коротке пояснення, потім
+          запустіть приклад і дайте відповідь на запитання. Наприкінці є
+          самостійні вправи.
+        </p>
+      </section>
+
+      <!-- TOKENIZATION -->
+      <section id="tokenize">
+        <h2><span>2</span> Токенізація</h2>
+        <p>
+          Токенізація — розбиття тексту на окремі слова (токени). Найпростіший
+          спосіб у NLTK:
+        </p>
+        <p class="why-nlp">
+          <strong>Навіщо це в NLP?</strong> Моделі не можуть аналізувати сирий
+          рядок як змістовні одиниці. Токенізація задає одиниці подальшої роботи
+          — слова, частини слів або символи — для пошуку, класифікації та
+          генерації.
+        </p>
+        <pre><code>import nltk
+nltk.download('punkt_tab')
+
+text = "Cats like milk, and dogs like bones!"
+tokens = nltk.word_tokenize(text)
+print(tokens)
+# → ['Cats', 'like', 'milk', ',', 'and', 'dogs', 'like', 'bones', '!']</code></pre>
+
+        <div class="interactive">
+          <h3>Спробуйте самі</h3>
+          <p>Введіть речення англійською або українською:</p>
+          <input
+            type="text"
+            id="tokenInput"
+            value="Коти люблять молоко, а собаки — кістки!"
+            placeholder="Ваше речення..."
+          />
+          <button class="btn" onclick="runTokenize()">Токенізувати</button>
+          <div class="result" id="tokenResult"></div>
+        </div>
+      </section>
+
+      <!-- STOPWORDS -->
+      <section id="stop">
+        <h2><span>3</span> Стоп-слова</h2>
+        <p>
+          Стоп-слова («the», «and», «is», «і», «та»…) зазвичай прибирають як
+          часті слова, що мало допомагають у деяких задачах. Демонстрація
+          підтримує базові англійський та український списки:
+        </p>
+        <p class="why-nlp">
+          <strong>Навіщо це в NLP?</strong> У пошуку ключових слів чи
+          тематичному аналізі вилучення частих службових слів може зменшити шум
+          і підкреслити важливі терміни. Але для задач, де важливі заперечення
+          або граматика (наприклад, «не сподобалось»), стоп-слова видаляють
+          обережно або не видаляють зовсім.
+        </p>
+        <pre><code>from nltk.corpus import stopwords
+nltk.download('stopwords')
+
+stop = set(stopwords.words('english'))
+clean = [t for t in tokens if t.lower() not in stop and t.isalpha()]
+print(clean)
+# → ['Cats', 'like', 'milk', 'dogs', 'like', 'bones']</code></pre>
+
+        <div class="interactive">
+          <h3>Інтерактивне очищення</h3>
+          <p>Візьмемо токени з попереднього кроку (або введіть свої):</p>
+          <input
+            type="text"
+            id="stopInput"
+            value="Cats like milk and dogs like bones"
+            placeholder="Слова через пробіл"
+          />
+          <button class="btn" onclick="runStopwords()">
+            Прибрати стоп-слова
+          </button>
+          <div class="result" id="stopResult"></div>
+        </div>
+      </section>
+
+      <!-- STEMMING & LEMMATIZATION -->
+      <section id="stem">
+        <h2><span>4</span> Стемінг і лематизація</h2>
+        <p>
+          Слова <code>study</code>, <code>studies</code>,
+          <code>studying</code> для комп’ютера різні, а за змістом — одне. Є два
+          способи звести їх до однієї форми:
+        </p>
+        <p class="why-nlp">
+          <strong>Навіщо це в NLP?</strong> Зведення словоформ допомагає пошуку
+          знаходити «run» за запитом «running», а лічильнику частот —
+          об’єднувати варіанти одного слова. Лематизація враховує словник і
+          точніша, тоді як стемінг швидший, але грубіший.
+        </p>
+
+        <div class="comparison">
+          <div class="card-mini">
+            <h4>Стемінг</h4>
+            <p>
+              Відрізає закінчення за простими правилами. Швидко, але результат
+              може бути не словом (<code>studies → studi</code>).
+            </p>
+          </div>
+          <div class="card-mini">
+            <h4>Лематизація</h4>
+            <p>
+              Шукає словникову форму. Повільніше, але результат — справжнє слово
+              (<code>studies → study</code>).
+            </p>
+          </div>
+        </div>
+
+        <pre><code>from nltk.stem import PorterStemmer, WordNetLemmatizer
+nltk.download('wordnet')
+
+st = PorterStemmer()
+lem = WordNetLemmatizer()
+
+for w in ['studies', 'studying', 'mice']:
+    print(w, st.stem(w), lem.lemmatize(w))
+# studies  studi  study
+# studying studi  studying
+# mice     mice   mouse</code></pre>
+
+        <div class="interactive">
+          <h3>Порівняйте самі</h3>
+          <input
+            type="text"
+            id="stemInput"
+            value="studies studying mice running flies better children"
+            placeholder="Слова через пробіл"
+          />
+          <button class="btn" onclick="runStemLem()">Стем + Лема</button>
+          <div class="result" id="stemResult"></div>
+          <p style="margin-top: 1rem; font-size: 0.9rem; color: var(--muted)">
+            Підказка: для <code>better</code> і <code>running</code> лематизатор
+            без <code>pos</code> часто помиляється. Спробуйте
+            <code>pos='a'</code> або <code>pos='v'</code>.
+          </p>
+        </div>
+      </section>
+
+      <!-- CORPUS -->
+      <section id="corpus">
+        <h2><span>5</span> Корпус Gutenberg</h2>
+        <p>NLTK має готові тексти. Візьмемо роман Джейн Остін «Емма»:</p>
+        <p class="why-nlp">
+          <strong>Навіщо це в NLP?</strong> Корпус — це приклади мови, на яких
+          досліджують закономірності та навчають або перевіряють моделі. Аналіз
+          корпусу показує частоти слів і дає змогу порівнювати, як модель працює
+          на різних текстах.
+        </p>
+        <pre><>from nltk.corpus import gutenberg
+nltk.download('gutenberg')
+#print(gutenberg.fileids())#перелік доступних текстів
+#text = gutenberg.raw('austen-emma.txt') # повний текст роману
+#print(text[:500]) # перші 500 символів
+words = gutenberg.words('austen-emma.txt')
+print(len(words))          # ≈ 192 427
+
+freq = nltk.FreqDist(
+    w.lower() for w in words
+    if w.isalpha() and w.lower() not in stop
+)
+print(freq.most_common(5))
+# [('mr', 1153), ('emma', 855), ('mrs', 698), ('miss', 599), ('harriet', 501)]</code></pre>
+
+        <div class="interactive">
+          <h3>Симуляція частотного аналізу</h3>
+          <p>
+            Ось топ-слова з «Емми» (після очищення). Натисніть, щоб побачити:
+          </p>
+          <button class="btn" onclick="showEmmaFreq()">Показати топ-5</button>
+          <div class="result" id="emmaResult"></div>
+        </div>
+      </section>
+
+      <!-- EMBEDDINGS -->
+      <section id="embed">
+        <h2><span>6</span> Embeddings: слова як числа</h2>
+        <p>
+          Комп’ютер працює з числами, тож кожному слову дають
+          <strong>вектор</strong> — список координат. Схожі за змістом слова
+          отримують близькі координати.
+        </p>
+        <p class="why-nlp">
+          <strong>Навіщо це в NLP?</strong> Embeddings перетворюють слова на
+          числові представлення, які модель може використовувати для обчислень.
+          Вони передають інформацію про схожість слів і допомагають задачам
+          класифікації, пошуку схожих текстів та аналізу значення слів у
+          контексті.
+        </p>
+
+        <h3 style="margin-top: 1.5rem; color: var(--accent2)">
+          Простий приклад: «Кіт їсть рибу»
+        </h3>
+        <p>
+          Уявімо, що кожне слово перетворилося на вектор із трьох чисел.
+          Щоб отримати один спрощений вектор для речення, усереднимо вектори
+          його слів:
+        </p>
+        <pre><code>кіт   → [0.8, 0.2, 0.1]
+їсть  → [0.1, 0.9, 0.2]
+рибу  → [0.7, 0.3, 0.8]
+
+вектор речення = ([0.8, 0.2, 0.1] +
+                  [0.1, 0.9, 0.2] +
+                  [0.7, 0.3, 0.8]) / 3
+                = [0.53, 0.47, 0.37]</code></pre>
+        <p>
+          <span class="highlight">Важливо:</span> числа тут умовні — це лише
+          наочна демонстрація. У справжніх моделях вектори мають набагато більше
+          координат і навчаються на великій кількості текстів. Контекстні моделі
+          також можуть створювати різні вектори для того самого слова залежно
+          від речення.
+        </p>
+
+        <pre><code># pip install gensim
+import gensim.downloader as api
+
+w = api.load('glove-wiki-gigaword-50')
+print(w['cat'][:5])                 # перші 5 чисел вектора
+print(w.similarity('cat', 'dog'))   # ≈ 0.92
+print(w.similarity('cat', 'car'))   # ≈ 0.32
+print(w.most_similar('cat', topn=3))</code></pre>
+
+        <div class="interactive">
+          <h3>Схожість слів (симуляція GloVe)</h3>
+          <div
+            style="
+              display: flex;
+              gap: 0.8rem;
+              flex-wrap: wrap;
+              margin-bottom: 0.8rem;
+            "
+          >
+            <input
+              type="text"
+              id="sim1"
+              value="cat"
+              style="flex: 1; min-width: 120px"
+              placeholder="слово 1"
+            />
+            <input
+              type="text"
+              id="sim2"
+              value="dog"
+              style="flex: 1; min-width: 120px"
+              placeholder="слово 2"
+            />
+          </div>
+          <button class="btn" onclick="runSimilarity()">
+            Порахувати схожість
+          </button>
+          <div class="result" id="simResult"></div>
+        </div>
+
+        <h3 style="margin-top: 1.5rem; color: var(--accent2)">
+          Word2Vec vs GloVe
+        </h3>
+        <div class="comparison">
+          <div class="card-mini">
+            <h4>Word2Vec</h4>
+            <p>
+              Грає у «вгадай сусіда»: бачить маленьке вікно слів і вчиться
+              вгадувати слово за оточенням (або навпаки).
+            </p>
+          </div>
+          <div class="card-mini">
+            <h4>GloVe</h4>
+            <p>
+              Спершу рахує, як часто слова трапляються поряд у всьому тексті, а
+              потім стискає ці підрахунки у вектори.
+            </p>
+          </div>
+        </div>
+
+        <pre><code># GloVe: арифметика слів
+print(w.most_similar(positive=['king', 'woman'], negative=['man'], topn=1))
+# → [('queen', 0.85...)]
+
+# Word2Vec: тренуємо на «Еммі»
+from gensim.models import Word2Vec
+sents = [[x.lower() for x in s] for s in gutenberg.sents('austen-emma.txt')]
+m = Word2Vec(sents, vector_size=50, window=5, min_count=5)
+print(m.wv.most_similar('emma', topn=3))</code></pre>
+
+        <p>
+          <span class="highlight">Важливо:</span>
+          <code>king − man + woman ≈ queen</code>. Модель, навчена лише на
+          одному романі (~190 тис. слів), значно слабша за GloVe, який «читав»
+          мільярди слів.
+        </p>
+        <p>
+          Приклад застосування Word2Vec у задачах NLP:
+          <a
+            href="https://www.kaggle.com/vladislavkisin/word2vec-in-supervised-nlp-tasks-shortcut"
+            target="_blank"
+            rel="noopener noreferrer"
+            >ноутбук на Kaggle</a
+          >.
+        </p>
+      </section>
+
+      <!-- LANGUAGE MODEL -->
+      <section id="lm">
+        <h2><span>7</span> Найпростіша мовна модель</h2>
+        <p>
+          Мовна модель оцінює ймовірність послідовності або передбачає наступний
+          токен: <em>«що найімовірніше буде далі?»</em>. Біграмна модель рахує
+          пари сусідніх слів. Вона проста, але не пам’ятає далекий контекст:
+        </p>
+        <p class="why-nlp">
+          <strong>Навіщо це в NLP?</strong> Передбачення наступного слова лежить
+          в основі автодоповнення, генерації тексту й оцінювання того, наскільки
+          фраза схожа на природну мову. Біграми — простий спосіб побачити цю
+          ідею до переходу до нейромереж.
+        </p>
+        <pre><code>clean = [x.lower() for x in words if x.isalpha()]
+cfd = nltk.ConditionalFreqDist(nltk.bigrams(clean))
+
+print(cfd['miss'].most_common(3))
+# [('woodhouse', 47), ('bates', 25), ('fairfax', 17)]
+
+word = 'emma'
+out = [word]
+for _ in range(10):
+    word = cfd[word].max()
+    out.append(word)
+print(' '.join(out))
+# emma was the only person ...</code></pre>
+
+        <div class="interactive">
+          <h3>Генерація з «Емми» (симуляція)</h3>
+          <input
+            type="text"
+            id="lmStart"
+            value="emma"
+            placeholder="Початкове слово"
+          />
+          <button class="btn" onclick="runLM()">Згенерувати 10 слів</button>
+          <div class="result" id="lmResult"></div>
+        </div>
+      </section>
+
+      <!-- LSTM -->
+      <section id="lstm">
+        <h2><span>8</span> LSTM</h2>
+        <p>
+          Рекурентна мережа читає речення слово за словом і після кожного
+          оновлює «пам’ять» (вектор <code>h</code>). Проблема: на довгих
+          реченнях початок поступово забувається.
+        </p>
+        <p>
+          <strong>LSTM</strong> лікує це так: поруч із короткою пам’яттю
+          <code>h</code> вона має довгу пам’ять <code>c</code> (як стрічка
+          конвеєра). Три «ворота» вирішують, що викинути, що записати і що
+          показати.
+        </p>
+        <p class="why-nlp">
+          <strong>Навіщо це в NLP?</strong> LSTM створювали, щоб моделі краще
+          враховували порядок і довший контекст у послідовностях. Її
+          застосовували для мовного моделювання, класифікації тексту та
+          генерації; це також корисний крок до розуміння сучасніших архітектур.
+        </p>
+
+        <pre><code>import torch, torch.nn as nn
+
+emb = nn.Embedding(1000, 16)   # словник 1000 → вектори 16
+lstm = nn.LSTM(16, 32, batch_first=True)
+
+ids = torch.tensor([[5, 42, 7, 99]])   # 1 речення з 4 слів
+out, (h, c) = lstm(emb(ids))
+print(out.shape, h.shape, c.shape)
+# torch.Size([1, 4, 32])  torch.Size([1, 1, 32])  torch.Size([1, 1, 32])</code></pre>
+
+        <div class="interactive">
+          <h3>Завдання на shapes</h3>
+          <p>
+            1. Що означає число <strong>4</strong> у <code>out.shape</code>?
+          </p>
+          <div id="quiz1">
+            <button class="quiz-option" onclick="checkQuiz(this, false)">
+              Розмір embedding
+            </button>
+            <button class="quiz-option" onclick="checkQuiz(this, true)">
+              Кількість слів у реченні
+            </button>
+            <button class="quiz-option" onclick="checkQuiz(this, false)">
+              Кількість шарів LSTM
+            </button>
+          </div>
+          <div id="quiz1Feedback" class="result" style="display: none"></div>
+
+          <p style="margin-top: 1.2rem">
+            2. Якщо додати ще 2 слова в <code>ids</code>, які форми зміняться?
+          </p>
+          <div id="quiz2">
+            <button
+              class="quiz-option"
+              onclick="checkQuiz(this, false, 'quiz2')"
+            >
+              Тільки h і c
+            </button>
+            <button
+              class="quiz-option"
+              onclick="checkQuiz(this, true, 'quiz2')"
+            >
+              Тільки out (стане [1, 6, 32])
+            </button>
+            <button
+              class="quiz-option"
+              onclick="checkQuiz(this, false, 'quiz2')"
+            >
+              Усі три форми
+            </button>
+          </div>
+          <div id="quiz2Feedback" class="result" style="display: none"></div>
+
+          <p style="margin-top: 1.2rem">
+            3. Чого немає у звичайної RNN порівняно з LSTM?
+          </p>
+          <div id="quiz3">
+            <button
+              class="quiz-option"
+              onclick="checkQuiz(this, false, 'quiz3')"
+            >
+              Вектора h
+            </button>
+            <button
+              class="quiz-option"
+              onclick="checkQuiz(this, true, 'quiz3')"
+            >
+              Довгої пам’яті c і трьох воріт
+            </button>
+            <button
+              class="quiz-option"
+              onclick="checkQuiz(this, false, 'quiz3')"
+            >
+              Embedding-шару
+            </button>
+          </div>
+          <div id="quiz3Feedback" class="result" style="display: none"></div>
+        </div>
+      </section>
+
+      <!-- SEQ2SEQ -->
+      <section id="seq2seq">
+        <h2><span>9</span> RNN і Seq2seq: послідовність у послідовність</h2>
+        <p>
+          <strong>Канонічна RNN</strong> обробляє елементи по черзі й передає
+          прихований стан <code>h</code> від кроку до кроку:
+          <code>hₜ = tanh(Wₓxₜ + Wₕhₜ₋₁)</code>. Це враховує порядок слів, але
+          звичайній RNN складно зберігати залежності на великій відстані.
+          <strong>LSTM</strong> додає стан пам’яті <code>c</code> і ворота, які
+          керують збереженням та оновленням інформації.
+        </p>
+        <p class="why-nlp">
+          <strong>Навіщо це в NLP?</strong> RNN і Seq2seq дають змогу моделювати
+          впорядкований текст і перетворювати одну послідовність на іншу —
+          наприклад, перекладати речення, узагальнювати текст або генерувати
+          символи.
+        </p>
+        <p>
+          <strong>Seq2seq</strong> — це схема «послідовність на вході →
+          послідовність на виході». Наприклад, encoder читає речення, а decoder
+          крок за кроком створює переклад. Encoder і decoder можуть бути RNN або
+          LSTM; у сучасних системах часто використовують трансформери.
+        </p>
+        <div class="comparison">
+          <div class="card-mini">
+            <h4>Encoder</h4>
+            <p>Читає вхідну послідовність і формує її представлення.</p>
+          </div>
+          <div class="card-mini">
+            <h4>Decoder</h4>
+            <p>
+              Використовує представлення, щоб передбачити вихідні токени по
+              одному.
+            </p>
+          </div>
+        </div>
+        <pre><code># Схема навчання символьної RNN: передбачити наступний символ
+import torch.nn as nn
+
+# input_ids і зсунуті на 1 target_ids: [batch, довжина]
+vocab_size = 100  # кількість символів у словнику
+embedding = nn.Embedding(vocab_size, 32)
+rnn = nn.GRU(32, 64, batch_first=True)
+output = nn.Linear(64, vocab_size)
+
+x = embedding(input_ids)
+hidden, _ = rnn(x)
+logits = output(hidden)  # оцінка кожного можливого наступного символу
+loss = nn.functional.cross_entropy(
+    logits.reshape(-1, vocab_size),
+    target_ids.reshape(-1)
+)</code></pre>
+        <p>
+          У навчальних даних ціль зсувають на один символ: для рядка
+          <code>привіт</code> модель бачить <code>приві</code> і вчиться
+          передбачити <code>ривіт</code>. Під час генерації останній
+          передбачений символ додають до входу й повторюють крок.
+        </p>
+        <div class="card-mini">
+          <h4>А як працює трансформер?</h4>
+          <p>
+            Трансформер використовує механізм <em>self-attention</em>: кожен
+            токен може враховувати інші токени послідовності. На відміну від
+            RNN, він обробляє позиції паралельно під час навчання; позиційне
+            кодування додає інформацію про порядок.
+          </p>
+        </div>
+        <p>
+          Повний навчальний приклад генерації символів на PyTorch:
+          <a
+            href="https://pytorch.org/tutorials/intermediate/char_rnn_generation_tutorial.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            >Character-Level RNN Generation</a
+          >.
+        </p>
+        <div class="interactive">
+          <h3>Перевірте розуміння</h3>
+          <p>Що робить decoder у Seq2seq?</p>
+          <div id="quiz4">
+            <button
+              class="quiz-option"
+              onclick="checkQuiz(this, false, 'quiz4')"
+            >
+              Видаляє стоп-слова з корпусу
+            </button>
+            <button
+              class="quiz-option"
+              onclick="checkQuiz(this, true, 'quiz4')"
+            >
+              Крок за кроком створює вихідну послідовність
+            </button>
+            <button
+              class="quiz-option"
+              onclick="checkQuiz(this, false, 'quiz4')"
+            >
+              Перетворює кожне слово на стем
+            </button>
+          </div>
+          <div id="quiz4Feedback" class="result" style="display: none"></div>
+        </div>
+      </section>
+
+      <!-- TRANSFER LEARNING -->
+      <section id="transfer">
+        <h2><span>10</span> Transfer learning</h2>
+        <p>
+          <strong>Transfer learning</strong> — використання знань моделі,
+          навченої раніше на великому наборі даних, для нової задачі. Це
+          зазвичай потребує менше розмічених прикладів і часу, ніж навчання з
+          нуля.
+        </p>
+        <p class="why-nlp">
+          <strong>Навіщо це в NLP?</strong> Навчання мовної моделі з нуля
+          потребує багато тексту й обчислень. Transfer learning дозволяє
+          використати вже засвоєні мовні закономірності й адаптувати модель до
+          вузької задачі, наприклад класифікації відгуків або відповідей на
+          запитання.
+        </p>
+        <ol>
+          <li>Завантажте попередньо навчені embeddings або мовну модель.</li>
+          <li>Використайте їх як незмінні ознаки для нового класифікатора.</li>
+          <li>
+            За потреби донавчіть частину моделі на своїх даних (fine-tuning).
+          </li>
+        </ol>
+        <div class="comparison">
+          <div class="card-mini">
+            <h4>Заморожені ознаки</h4>
+            <p>
+              Попередньо навчені параметри не змінюються; навчається лише новий
+              шар. Швидше й потребує менше даних.
+            </p>
+          </div>
+          <div class="card-mini">
+            <h4>Fine-tuning</h4>
+            <p>
+              Частина або всі параметри донавчаються на цільовій задачі. Може
+              дати кращий результат, але потребує обережного налаштування.
+            </p>
+          </div>
+        </div>
+        <pre><code># Приклад використання готових GloVe-векторів як ознак
+import gensim.downloader as api
+
+vectors = api.load('glove-wiki-gigaword-50')
+review_vector = vectors['excellent']  # готовий вектор слова
+# Далі вектори слів можна об'єднати в ознаки тексту
+# та навчити класифікатор на власних прикладах.</code></pre>
+        <div class="interactive">
+          <h3>Перевірте розуміння</h3>
+          <p>Що найточніше описує fine-tuning?</p>
+          <div id="quiz5">
+            <button
+              class="quiz-option"
+              onclick="checkQuiz(this, false, 'quiz5')"
+            >
+              Повне видалення попередніх параметрів
+            </button>
+            <button
+              class="quiz-option"
+              onclick="checkQuiz(this, true, 'quiz5')"
+            >
+              Донавчання попередньо навченої моделі на новій задачі
+            </button>
+            <button
+              class="quiz-option"
+              onclick="checkQuiz(this, false, 'quiz5')"
+            >
+              Лише поділ тексту на токени
+            </button>
+          </div>
+          <div id="quiz5Feedback" class="result" style="display: none"></div>
+        </div>
+      </section>
+
+      <!-- TASKS -->
+      <section id="tasks">
+        <h2><span>11</span> Самостійна практика</h2>
+        <p>
+          Спочатку виконайте вправу самостійно, а потім натисніть кнопку
+          перевірки або підказки.
+        </p>
+        <p class="why-nlp">
+          <strong>Навіщо практика в NLP?</strong> Послідовні вправи показують,
+          як сирий текст крок за кроком стає представленням, придатним для
+          пошуку, аналізу або прогнозування. Це допомагає зрозуміти, який етап
+          впливає на результат і коли його варто застосовувати.
+        </p>
+
+        <div class="interactive">
+          <h3>Завдання 1. Токени й стоп-слова</h3>
+          <p>
+            Напишіть речення українською або англійською. Токенізуйте, приберіть
+            стоп-слова і розділові знаки. Скільки токенів залишилося?
+          </p>
+          <textarea
+            id="task1Input"
+            rows="2"
+            placeholder="Сьогодні я рано прокинувся і випив каву з молоком."
+          ></textarea>
+          <button class="btn" onclick="runTask1()">Перевірити</button>
+          <div class="result" id="task1Result"></div>
+        </div>
+
+        <div class="interactive">
+          <h3>Завдання 2. Стемінг і лематизація</h3>
+          <p>
+            Для слів <code>running, flies, better, children</code> виведіть стем
+            і лему. Для яких слів лематизатор без <code>pos</code> помилився?
+          </p>
+          <button class="btn" onclick="runTask2()">Показати відповідь</button>
+          <div class="result" id="task2Result"></div>
+        </div>
+
+        <div class="interactive">
+          <h3>Завдання 3. Корпус «Аліса»</h3>
+          <p>
+            Візьміть <code>carroll-alice.txt</code>. Скільки в ньому слів? Які 5
+            найчастіших слів після очищення?
+          </p>
+          <button class="btn" onclick="runTask3()">Показати відповідь</button>
+          <div class="result" id="task3Result"></div>
+        </div>
+
+        <div class="interactive">
+          <h3>Завдання 4. Word2Vec чи GloVe?</h3>
+          <p>
+            Підберіть метод: (а) модель навчається передбачати слова в
+            локальному контексті; (б) модель використовує статистику спільної
+            появи слів у корпусі. Який метод відповідає кожному опису?
+          </p>
+          <button class="btn btn-secondary" onclick="toggleHint('task4Hint')">
+            Показати відповідь
+          </button>
+          <div class="result" id="task4Hint" hidden>
+            а) Word2Vec; б) GloVe. Обидва методи створюють щільні вектори слів,
+            але навчаються по-різному.
+          </div>
+        </div>
+
+        <div class="interactive">
+          <h3>Завдання 5. Наступний символ</h3>
+          <p>
+            Іграшкова симуляція підраховує символи, які йдуть після останнього
+            символу вашого вводу в мінікорпусі
+            <code>hello there. hello world.</code>. Це частотна таблиця, а не
+            навчена нейромережа.
+          </p>
+          <input
+            type="text"
+            id="charInput"
+            value="hell"
+            maxlength="24"
+            placeholder="Наприклад, hell"
+          />
+          <button class="btn" onclick="predictNextChar()">
+            Порахувати наступний символ
+          </button>
+          <div class="result" id="charResult"></div>
+        </div>
+
+        <div class="interactive">
+          <h3>Завдання 6. Плануйте transfer learning</h3>
+          <p>
+            Є 200 розмічених відгуків і попередньо навчена мовна модель. Який
+            перший крок найкраще перевірити для класифікації тональності?
+          </p>
+          <div id="quiz6">
+            <button
+              class="quiz-option"
+              onclick="checkQuiz(this, false, 'quiz6')"
+            >
+              Навчати велику модель з нуля лише на цих 200 відгуках
+            </button>
+            <button
+              class="quiz-option"
+              onclick="checkQuiz(this, true, 'quiz6')"
+            >
+              Використати готові представлення, навчити невелику голову й
+              оцінити якість на відкладених даних
+            </button>
+            <button
+              class="quiz-option"
+              onclick="checkQuiz(this, false, 'quiz6')"
+            >
+              Оцінити модель на тих самих прикладах, на яких вона навчалась
+            </button>
+          </div>
+          <div id="quiz6Feedback" class="result" style="display: none"></div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      Урок охоплює теми плану: NLTK, корпуси, Word2Vec, GloVe, мовні моделі,
+      RNN/LSTM, Seq2seq і transfer learning.<br />
+      Інтерактивні демо в браузері — навчальні симуляції; Python-приклади
+      потребують відповідних бібліотек і даних.
+    </footer>
+
+    <script>
+      // ========== HELPERS ==========
+      const EN_STOP = new Set([
+        "i",
+        "me",
+        "my",
+        "myself",
+        "we",
+        "our",
+        "ours",
+        "ourselves",
+        "you",
+        "your",
+        "yours",
+        "yourself",
+        "yourselves",
+        "he",
+        "him",
+        "his",
+        "himself",
+        "she",
+        "her",
+        "hers",
+        "herself",
+        "it",
+        "its",
+        "itself",
+        "they",
+        "them",
+        "their",
+        "theirs",
+        "themselves",
+        "what",
+        "which",
+        "who",
+        "whom",
+        "this",
+        "that",
+        "these",
+        "those",
+        "am",
+        "is",
+        "are",
+        "was",
+        "were",
+        "be",
+        "been",
+        "being",
+        "have",
+        "has",
+        "had",
+        "having",
+        "do",
+        "does",
+        "did",
+        "doing",
+        "a",
+        "an",
+        "the",
+        "and",
+        "but",
+        "if",
+        "or",
+        "because",
+        "as",
+        "until",
+        "while",
+        "of",
+        "at",
+        "by",
+        "for",
+        "with",
+        "about",
+        "against",
+        "between",
+        "into",
+        "through",
+        "during",
+        "before",
+        "after",
+        "above",
+        "below",
+        "to",
+        "from",
+        "up",
+        "down",
+        "in",
+        "out",
+        "on",
+        "off",
+        "over",
+        "under",
+        "again",
+        "further",
+        "then",
+        "once",
+        "here",
+        "there",
+        "when",
+        "where",
+        "why",
+        "how",
+        "all",
+        "any",
+        "both",
+        "each",
+        "few",
+        "more",
+        "most",
+        "other",
+        "some",
+        "such",
+        "no",
+        "nor",
+        "not",
+        "only",
+        "own",
+        "same",
+        "so",
+        "than",
+        "too",
+        "very",
+        "s",
+        "t",
+        "can",
+        "will",
+        "just",
+        "don",
+        "should",
+        "now",
+        "d",
+        "ll",
+        "m",
+        "o",
+        "re",
+        "ve",
+        "y",
+        "ain",
+        "aren",
+        "couldn",
+        "didn",
+        "doesn",
+        "hadn",
+        "hasn",
+        "haven",
+        "isn",
+        "ma",
+        "mightn",
+        "mustn",
+        "needn",
+        "shan",
+        "shouldn",
+        "wasn",
+        "weren",
+        "won",
+        "wouldn",
+      ]);
+
+      const UK_STOP = new Set([
+        "а",
+        "або",
+        "але",
+        "без",
+        "би",
+        "б",
+        "був",
+        "була",
+        "було",
+        "були",
+        "бути",
+        "в",
+        "вам",
+        "вас",
+        "ваш",
+        "ваша",
+        "ваше",
+        "ваші",
+        "весь",
+        "вже",
+        "ви",
+        "від",
+        "він",
+        "вона",
+        "вони",
+        "воно",
+        "все",
+        "всім",
+        "всіх",
+        "для",
+        "до",
+        "же",
+        "з",
+        "за",
+        "і",
+        "із",
+        "й",
+        "її",
+        "їх",
+        "його",
+        "коли",
+        "крізь",
+        "ми",
+        "мене",
+        "мені",
+        "мною",
+        "може",
+        "можуть",
+        "моя",
+        "моє",
+        "мої",
+        "на",
+        "над",
+        "нас",
+        "наш",
+        "наша",
+        "наше",
+        "наші",
+        "не",
+        "немає",
+        "ним",
+        "ними",
+        "них",
+        "ну",
+        "нього",
+        "один",
+        "одна",
+        "одне",
+        "одні",
+        "ось",
+        "от",
+        "під",
+        "по",
+        "при",
+        "про",
+        "себе",
+        "собі",
+        "собою",
+        "та",
+        "так",
+        "також",
+        "там",
+        "те",
+        "тебе",
+        "тобі",
+        "тобою",
+        "той",
+        "то",
+        "тому",
+        "ти",
+        "ті",
+        "тільки",
+        "тут",
+        "у",
+        "усе",
+        "це",
+        "цей",
+        "ця",
+        "ці",
+        "чи",
+        "чого",
+        "що",
+        "щоб",
+        "як",
+        "я",
+        "мені",
+        "мене",
+        "нас",
+        "вам",
+        "їм",
+      ]);
+
+      const STOP_WORDS = new Set([...EN_STOP, ...UK_STOP]);
+
+      function simpleTokenize(text) {
+        return (
+          text.match(/[\p{L}\p{M}]+(?:['’][\p{L}\p{M}]+)*|[.,!?;:]/gu) || []
+        );
+      }
+
+      function isWordToken(token) {
+        return /^[\p{L}\p{M}]+(?:['’][\p{L}\p{M}]+)*$/u.test(token);
+      }
+
+      // Educational approximation; use NLTK PorterStemmer for real stemming.
+      function simpleStem(word) {
+        word = word.toLowerCase();
+        if (word.endsWith("ies") && word.length > 4)
+          return word.slice(0, -3) + "i";
+        if (word.endsWith("ing") && word.length > 5) {
+          const stem = word.slice(0, -3);
+          return /(.)\1$/.test(stem) ? stem.slice(0, -1) : stem;
+        }
+        if (word.endsWith("ed") && word.length > 4) return word.slice(0, -2);
+        if (word.endsWith("es") && word.length > 4) return word.slice(0, -2);
+        if (word.endsWith("s") && word.length > 3 && !word.endsWith("ss"))
+          return word.slice(0, -1);
+        return word;
+      }
+
+      // Tiny browser-side illustration of WordNet's part-of-speech behavior.
+      const LEMMA_DICT = {
+        n: {
+          studies: "study",
+          mice: "mouse",
+          children: "child",
+          feet: "foot",
+          flies: "fly",
+        },
+        v: {
+          studies: "study",
+          studying: "study",
+          studied: "study",
+          running: "run",
+          runs: "run",
+          ran: "run",
+          flies: "fly",
+          flying: "fly",
+          flew: "fly",
+          are: "be",
+          is: "be",
+          was: "be",
+          were: "be",
+          been: "be",
+          has: "have",
+          had: "have",
+          having: "have",
+        },
+        a: { better: "good", best: "good", worse: "bad", worst: "bad" },
+      };
+      function simpleLemma(word, pos = "n") {
+        const w = word.toLowerCase();
+        return LEMMA_DICT[pos]?.[w] || w;
+      }
+
+      // ========== SECTION FUNCTIONS ==========
+      function runTokenize() {
+        const text = document.getElementById("tokenInput").value;
+        const tokens = simpleTokenize(text);
+        document.getElementById("tokenResult").textContent = JSON.stringify(
+          tokens,
+          null,
+          0,
+        );
+      }
+
+      function runStopwords() {
+        const text = document.getElementById("stopInput").value;
+        const tokens = simpleTokenize(text);
+        const cleaned = tokens.filter(
+          (t) => isWordToken(t) && !STOP_WORDS.has(t.toLocaleLowerCase()),
+        );
+        document.getElementById("stopResult").textContent =
+          `До: ${tokens.length} токенів\nПісля: ${cleaned.length} токенів\n\n${JSON.stringify(cleaned)}`;
+      }
+
+      function runStemLem() {
+        const words = document
+          .getElementById("stemInput")
+          .value.trim()
+          .split(/\s+/);
+        let out = "слово          стем       лема\n" + "-".repeat(40) + "\n";
+        words.forEach((w) => {
+          const stem = simpleStem(w);
+          const lem = simpleLemma(w);
+          out += `${w.padEnd(14)} ${stem.padEnd(10)} ${lem}\n`;
+        });
+        document.getElementById("stemResult").textContent = out;
+      }
+
+      function showEmmaFreq() {
+        document.getElementById("emmaResult").textContent =
+          `Кількість слів у austen-emma.txt ≈ 192 427
+
+Топ-5 після очищення:
+  mr        1153
+  emma       855
+  mrs        698
+  miss       599
+  harriet    501`;
+      }
+
+      // Illustrative similarities from a tiny fixed demo dictionary, not real embeddings.
+      const SIM = {
+        "cat|dog": 0.87,
+        "dog|cat": 0.87,
+        "cat|car": 0.21,
+        "car|cat": 0.21,
+        "king|queen": 0.76,
+        "queen|king": 0.76,
+        "man|woman": 0.82,
+        "woman|man": 0.82,
+        "king|man": 0.65,
+        "man|king": 0.65,
+        "woman|queen": 0.71,
+        "queen|woman": 0.71,
+        "emma|harriet": 0.68,
+        "harriet|emma": 0.68,
+        "cat|mouse": 0.55,
+        "mouse|cat": 0.55,
+        "dog|bone": 0.49,
+        "bone|dog": 0.49,
+      };
+      function runSimilarity() {
+        const a = document.getElementById("sim1").value.trim().toLowerCase();
+        const b = document.getElementById("sim2").value.trim().toLowerCase();
+        const key = a + "|" + b;
+        const score = SIM[key];
+        document.getElementById("simResult").textContent =
+          score === undefined
+            ? `Для "${a}" і "${b}" немає прикладу в демо-словнику. Спробуйте cat/dog, cat/car або king/queen.`
+            : `similarity("${a}", "${b}") ≈ ${score}\n\n` +
+              (score > 0.6
+                ? "Досить близькі за змістом у цьому прикладі"
+                : score > 0.35
+                  ? "Слабкий зв’язок у цьому прикладі"
+                  : "Майже не пов’язані у цьому прикладі");
+      }
+
+      // Tiny bigram "model" from Emma
+      const BIGRAMS = {
+        emma: ["was", "had", "could", "felt", "said"],
+        was: ["the", "not", "a", "so", "very"],
+        the: ["only", "same", "other", "first", "whole"],
+        only: ["person", "one", "thing", "way", "daughter"],
+        person: ["who", "in", "to", "of", "that"],
+        miss: ["woodhouse", "bates", "fairfax", "taylor", "smith"],
+        woodhouse: ["had", "was", "and", "of", "could"],
+        mr: ["knightley", "woodhouse", "elton", "weston", "martin"],
+        knightley: ["was", "had", "said", "and", "could"],
+        harriet: ["was", "had", "and", "smith", "felt"],
+      };
+      function runLM() {
+        let word =
+          document.getElementById("lmStart").value.trim().toLowerCase() ||
+          "emma";
+        const out = [word];
+        for (let i = 0; i < 10; i++) {
+          const nexts = BIGRAMS[word] || ["the", "and", "of", "to", "a"];
+          word = nexts[Math.floor(Math.random() * nexts.length)];
+          out.push(word);
+        }
+        document.getElementById("lmResult").textContent = out.join(" ");
+      }
+
+      function checkQuiz(btn, isCorrect, group = "quiz1") {
+        const container = document.getElementById(group);
+        const feedback = document.getElementById(group + "Feedback");
+        const options = Array.from(container.querySelectorAll(".quiz-option"));
+        options.forEach((option) =>
+          option.classList.remove("correct", "wrong"),
+        );
+        feedback.style.display = "block";
+        if (isCorrect) {
+          options.forEach((option) => {
+            option.disabled = true;
+          });
+          btn.classList.add("correct");
+          feedback.textContent = "Правильно!";
+          feedback.className = "result success-msg";
+        } else {
+          btn.classList.add("wrong");
+          feedback.textContent =
+            "Неправильно. Спробуйте ще раз або перечитайте пояснення.";
+          feedback.className = "result error-msg";
+        }
+        if (group === "quiz1" && isCorrect) {
+          feedback.textContent +=
+            " Число 4 — це довжина послідовності (кількість слів у реченні).";
+        }
+        if (group === "quiz2" && isCorrect) {
+          feedback.textContent +=
+            " out стане [1, 6, 32]. h і c залишаються [1, 1, 32], бо вони — фінальний стан.";
+        }
+        if (group === "quiz3" && isCorrect) {
+          feedback.textContent +=
+            " У звичайної RNN немає комірки довгої пам’яті c і механізму воріт.";
+        }
+        if (group === "quiz4" && isCorrect) {
+          feedback.textContent +=
+            " Decoder отримує контекст encoder-а й генерує вихідні токени послідовно.";
+        }
+        if (group === "quiz5" && isCorrect) {
+          feedback.textContent +=
+            " Для цього використовують дані цільової задачі.";
+        }
+        if (group === "quiz6" && isCorrect) {
+          feedback.textContent +=
+            " Відкладена вибірка допомагає оцінити, як модель працює на нових даних.";
+        }
+      }
+
+      // ========== TASKS ==========
+      function toggleHint(id) {
+        const hint = document.getElementById(id);
+        hint.hidden = !hint.hidden;
+      }
+
+      function predictNextChar() {
+        const input = document.getElementById("charInput").value.toLowerCase();
+        const corpus = "hello there. hello world.";
+        const counts = new Map();
+        const lastChar = input.slice(-1);
+        for (let i = 0; i < corpus.length - 1; i++) {
+          if (corpus[i] === lastChar) {
+            const next = corpus[i + 1];
+            counts.set(next, (counts.get(next) || 0) + 1);
+          }
+        }
+        const result = document.getElementById("charResult");
+        if (!input || counts.size === 0) {
+          result.textContent =
+            "Введіть непорожній символ, який трапляється в мінікорпусі (наприклад, hell).";
+          return;
+        }
+        const ranked = Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+        result.textContent =
+          `Після "${lastChar}" у корпусі трапляються: ` +
+          ranked
+            .map(
+              ([character, count]) =>
+                `${character === " " ? "пробіл" : character} (${count})`,
+            )
+            .join(", ") +
+          `.\nНайчастіший наступний символ: ${ranked[0][0] === " " ? "пробіл" : ranked[0][0]}.`;
+      }
+
+      function runTask1() {
+        const text = document.getElementById("task1Input").value;
+        if (!text.trim()) {
+          document.getElementById("task1Result").textContent =
+            "Спочатку напишіть речення.";
+          return;
+        }
+        const tokens = simpleTokenize(text);
+        const clean = tokens.filter(
+          (t) => isWordToken(t) && !STOP_WORDS.has(t.toLocaleLowerCase()),
+        );
+        document.getElementById("task1Result").textContent =
+          `Оригінал: ${tokens.length} токенів\n` +
+          `Після очищення: ${clean.length} токенів\n\n` +
+          JSON.stringify(clean);
+      }
+
+      function runTask2() {
+        const words = ["running", "flies", "better", "children"];
+        let out =
+          "слово       стем      лема (без pos)   з pos\n" +
+          "-".repeat(50) +
+          "\n";
+        words.forEach((w) => {
+          const stem = simpleStem(w);
+          const lem = simpleLemma(w);
+          const pos = w === "running" ? "v" : w === "better" ? "a" : "n";
+          const withPos = simpleLemma(w, pos);
+          out += `${w.padEnd(11)} ${stem.padEnd(9)} ${lem.padEnd(15)} ${withPos}\n`;
+        });
+        out +=
+          "\nЗа замовчуванням WordNetLemmatizer трактує слово як іменник: тому running і better без pos лишаються без змін.\n";
+        out += 'Виправлення: lemmatize("running", pos="v") → run\n';
+        out += '             lemmatize("better", pos="a") → good';
+        document.getElementById("task2Result").textContent = out;
+      }
+
+      function runTask3() {
+        document.getElementById("task3Result").textContent =
+          `Файл: carroll-alice.txt («Аліса в Країні чудес»)
+
+Кількість слів (gutenberg.words): ≈ 34 163
+
+Топ-5 після видалення стоп-слів і розділових знаків
+(типові результати):
+  said      ≈ 462
+  alice     ≈ 398
+  little    ≈ 128
+  one       ≈ 104
+  know      ≈  87
+
+(Точні цифри можуть трохи відрізнятися залежно від версії NLTK)`;
+      }
+
+      // Progress bar
+      window.addEventListener("scroll", () => {
+        const h = document.documentElement;
+        const pct = (h.scrollTop / (h.scrollHeight - h.clientHeight)) * 100;
+        document.getElementById("progress").style.width = pct + "%";
+      });
+
+      // Smooth nav highlight
+      const sections = document.querySelectorAll("section");
+      const navLinks = document.querySelectorAll("nav a");
+      const navMenu = document.querySelector(".nav-menu");
+      const navCurrent = document.getElementById("navCurrent");
+      navLinks.forEach((link) => {
+        link.addEventListener("click", () => {
+          navCurrent.textContent = link.textContent;
+          navLinks.forEach((item) => item.classList.remove("active"));
+          link.classList.add("active");
+          navMenu.open = false;
+        });
+      });
+      const observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((e) => {
+            if (e.isIntersecting) {
+              navLinks.forEach((l) => l.classList.remove("active"));
+              const id = e.target.id;
+              const link = document.querySelector(`nav a[href="#${id}"]`);
+              if (link) {
+                link.classList.add("active");
+                navCurrent.textContent = link.textContent;
+              }
+            }
+          });
+        },
+        { threshold: 0.3 },
+      );
+      sections.forEach((s) => observer.observe(s));
+
+      // Init some results
+      runTokenize();
+    </script>
+  </body>
+</html>
